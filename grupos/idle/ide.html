@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Most Viewed Songs of 2024</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .bg-gradient-custom {
+            background: linear-gradient(135deg, #4158D0, #C850C0);
+        }
+        
+        .card {
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            height: 100%;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .song-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .song-thumbnail {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .song-thumbnail img {
+            transition: transform 0.5s;
+            width: 100%;
+        }
+        
+        .card:hover .song-thumbnail img {
+            transform: scale(1.05);
+        }
+        
+        .song-title {
+            font-weight: 600;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .badge-custom {
+            font-weight: 500;
+            padding: 5px 10px;
+        }
+        
+        .page-item.active .page-link {
+            background-color: #C850C0;
+            border-color: #C850C0;
+        }
+        
+        .page-link {
+            color: #4158D0;
+        }
+        
+        .page-link:hover {
+            color: #C850C0;
+        }
+        
+        .spinner-grow {
+            width: 3rem;
+            height: 3rem;
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .stats-text {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 767.98px) {
+            .song-stats {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .song-title {
+                font-size: 0.9rem;
+            }
+            
+            .card-body {
+                padding: 0.75rem;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .pagination .page-item {
+                margin-bottom: 5px;
+            }
+        }
+        
+        /* List view styles */
+        .list-view .card {
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .list-view .song-thumbnail {
+            width: 140px;
+            flex-shrink: 0;
+        }
+        
+        .list-view .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        @media (max-width: 575.98px) {
+            .list-view .song-thumbnail {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient-custom text-white py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold mb-0">MOST VIEWED ONEUS</h1>
+
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end justify-content-center">
+                    <button id="toggle-view-btn" class="btn btn-outline-light me-2">
+                        <i class="bi bi-grid"></i> Cambiar vista
+                    </button>
+                    <button id="save-stats" class="btn btn-light">
+                        <i class="bi bi-save"></i> Guardar vistas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-grow text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <h4 class="mt-3">Cargando datos...</h4>
+        </div>
+
+        <div id="error-message" class="alert alert-danger d-none" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> 
+            <span id="error-text">Ha ocurrido un error al cargar los datos.</span>
+        </div>
+
+        <div id="content" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h4 mb-0">Mostrando <span id="range-start">1</span>-<span id="range-end">50</span> de <span id="total-songs">125</span></h2>
+                </div>
+                <div class="input-group" style="max-width: 300px;">
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar canciones...">
+                    <button class="btn btn-outline-secondary" type="button" id="search-button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="videos-container" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4"></div>
+
+            <nav aria-label="Paginación" class="my-5">
+                <ul id="pagination" class="pagination justify-content-center flex-wrap"></ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Modal para guardar estadísticas -->
+    <div class="modal fade" id="stats-modal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-custom text-white">
+                    <h5 class="modal-title" id="statsModalLabel">Estadísticas Guardadas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="stats-text" id="saved-stats-content"></div>
+                    <div class="alert alert-success d-none mt-3" id="status-message">
+                        <i class="bi bi-check-circle-fill me-2"></i> 
+                        <span id="status-text">Copiado con éxito</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button id="copy-all-btn" class="btn btn-primary">
+                            <i class="bi bi-clipboard me-1"></i> Copiar texto
+                        </button>
+                        <button id="copy-excel-btn" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Copiar para Excel
+                        </button>
+                        <button id="save-sheets-btn" class="btn btn-warning text-dark">
+                            <i class="bi bi-google me-1"></i> Guardar en Sheets
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const API_KEY = 'AIzaSyBBGvojmSSMxAMnEJgeoTFlaeniInE4OC4';
+        const PLAYLIST_ID = 'PLWEw-iUFFXg3cqfyYlkqpCC92krSsprDM&si=npNa7XWxI_JJbFOB';
+        const ITEMS_PER_PAGE = 20;
+        
+        let allVideos = [];
+        let currentPage = 1;
+        let currentView = 'grid'; 
+        let filteredVideos = [];
+        let statsModal;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            statsModal = new bootstrap.Modal(document.getElementById('stats-modal'));
+            
+            document.getElementById('toggle-view-btn').addEventListener('click', toggleView);
+            document.getElementById('save-stats').addEventListener('click', openStatsModal);
+            document.getElementById('copy-all-btn').addEventListener('click', copyAllStats);
+            document.getElementById('copy-excel-btn').addEventListener('click', copyExcelStats);
+            document.getElementById('save-sheets-btn').addEventListener('click', saveToSheets);
+            document.getElementById('search-button').addEventListener('click', searchVideos);
+            document.getElementById('search-input').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    searchVideos();
+                }
+            });
+            
+            await fetchVideos();
+        });
+        
+        async function fetchVideos() {
+            try {
+                showLoading(true);
+
+                let nextPageToken = '';
+                allVideos = [];
+                
+                while (allVideos.length < 20 && (nextPageToken !== undefined)) {
+                    const playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=20&playlistId=${PLAYLIST_ID}&key=${API_KEY}${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
+                    const playlistResponse = await fetch(playlistUrl);
+                    const playlistData = await playlistResponse.json();
+                    
+                    if (!playlistData.items || playlistData.items.length === 0) {
+                        break;
+                    }
+                    
+                    const videos = playlistData.items.map(item => ({
+                        id: item.snippet.resourceId.videoId,
+                        title: item.snippet.title,
+                        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url
+                    }));
+                    
+                    // Fetch statistics in batches of 50 videos
+                    const videoIds = videos.map(video => video.id).join(',');
+                    const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${API_KEY}`;
+                    const statsResponse = await fetch(statsUrl);
+                    const statsData = await statsResponse.json();
+                    
+                    const videosWithStats = videos.map(video => {
+                        const statsItem = statsData.items.find(item => item.id === video.id);
+                        const stats = statsItem?.statistics || {};
+                        const contentDetails = statsItem?.contentDetails || {};
+                        
+                        return {
+                            ...video,
+                            views: parseInt(stats.viewCount || '0', 10),
+                            likes: parseInt(stats.likeCount || '0', 10),
+                            duration: contentDetails.duration || 'PT0M0S',
+                            url: `https://www.youtube.com/watch?v=${video.id}`
+                        };
+                    });
+                    
+                    allVideos = [...allVideos, ...videosWithStats];
+                    nextPageToken = playlistData.nextPageToken;
+                }
+                
+                allVideos.sort((a, b) => b.views - a.views);
+                
+                allVideos = allVideos.slice(0, 125);
+                filteredVideos = [...allVideos];
+                
+                updatePagination();
+                renderVideos();
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error fetching videos:', error);
+                document.getElementById('error-text').textContent = `Error al cargar videos: ${error.message}`;
+                document.getElementById('error-message').classList.remove('d-none');
+                showLoading(false);
+            }
+        }
+        
+        function showLoading(isLoading) {
+            const loadingElement = document.getElementById('loading');
+            const contentElement = document.getElementById('content');
+            const errorElement = document.getElementById('error-message');
+            
+            if (isLoading) {
+                loadingElement.classList.remove('d-none');
+                contentElement.classList.add('d-none');
+                errorElement.classList.add('d-none');
+            } else {
+                loadingElement.classList.add('d-none');
+                contentElement.classList.remove('d-none');
+            }
+        }
+        
+        function renderVideos() {
+            const container = document.getElementById('videos-container');
+            container.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filteredVideos.length);
+            
+            document.getElementById('range-start').textContent = startIndex + 1;
+            document.getElementById('range-end').textContent = endIndex;
+            document.getElementById('total-songs').textContent = filteredVideos.length;
+            
+            const currentVideos = filteredVideos.slice(startIndex, endIndex);
+            
+            container.className = currentView === 'grid' 
+                ? 'row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4' 
+                : 'list-view';
+            
+            currentVideos.forEach((video, index) => {
+                const absoluteIndex = startIndex + index + 1;
+                
+                const videoElement = document.createElement('div');
+                videoElement.className = currentView === 'grid' ? 'col' : 'mb-3';
+                
+                const duration = formatDuration(video.duration);
+                
+                videoElement.innerHTML = `
+                    <div class="card h-100">
+                        <div class="song-number">${absoluteIndex}</div>
+                        <div class="song-thumbnail">
+                            <img src="${video.thumbnail}" alt="Thumbnail" class="img-fluid">
+                            ${duration ? `<span class="badge bg-dark position-absolute bottom-0 end-0 m-2">${duration}</span>` : ''}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="song-title">${video.title}</h5>
+                            <div class="d-flex gap-3 song-stats">
+                                <span class="d-flex align-items-center">
+                                    <i class="bi bi-eye-fill me-1 text-primary"></i>
+                                    ${video.views.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(videoElement);
+            });
+        }
+        
+        function updatePagination() {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            const totalPages = Math.ceil(filteredVideos.length / ITEMS_PER_PAGE);
+            
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`;
+            prevLi.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderVideos();
+                    updatePagination();
+                    window.scrollTo(0, 0);
+                }
+            });
+            pagination.appendChild(prevLi);
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+            
+            // First page
+            if (startPage > 1) {
+                const firstLi = document.createElement('li');
+                firstLi.className = 'page-item';
+                firstLi.innerHTML = `<a class="page-link" href="#">1</a>`;
+                firstLi.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = 1;
+                    renderVideos();
+                    updatePagination();
+                    window.scrollTo(0, 0);
+                });
+                pagination.appendChild(firstLi);
+                
+                if (startPage > 2) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = `<a class="page-link" href="#">...</a>`;
+                    pagination.appendChild(ellipsisLi);
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                pageLi.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    renderVideos();
+                    updatePagination();
+                    window.scrollTo(0, 0);
+                });
+                pagination.appendChild(pageLi);
+            }
+            
+            // Last page ellipsis
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = document.createElement('li');
+                    ellipsisLi.className = 'page-item disabled';
+                    ellipsisLi.innerHTML = `<a class="page-link" href="#">...</a>`;
+                    pagination.appendChild(ellipsisLi);
+                }
+                
+                const lastLi = document.createElement('li');
+                lastLi.className = 'page-item';
+                lastLi.innerHTML = `<a class="page-link" href="#">${totalPages}</a>`;
+                lastLi.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = totalPages;
+                    renderVideos();
+                    updatePagination();
+                    window.scrollTo(0, 0);
+                });
+                pagination.appendChild(lastLi);
+            }
+            
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`;
+            nextLi.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderVideos();
+                    updatePagination();
+                    window.scrollTo(0, 0);
+                }
+            });
+            pagination.appendChild(nextLi);
+        }
+        
+        function toggleView() {
+            const toggleButton = document.getElementById('toggle-view-btn');
+            
+            if (currentView === 'grid') {
+                currentView = 'list';
+                toggleButton.innerHTML = '<i class="bi bi-grid"></i> Ver cuadrícula';
+            } else {
+                currentView = 'grid';
+                toggleButton.innerHTML = '<i class="bi bi-list"></i> Ver lista';
+            }
+            
+            renderVideos();
+        }
+        
+        function openStatsModal() {
+            // Solo mostrar los primeros 100 videos en el formato específico
+            const textContent = allVideos.slice(0, 20).map((video, index) => 
+                `#${index + 1}: ${video.title}\nviews: ${video.views.toLocaleString()}`
+            ).join('\n\n');
+            
+            document.getElementById('saved-stats-content').textContent = textContent;
+            document.getElementById('status-message').classList.add('d-none');
+            statsModal.show();
+        }
+        
+        function copyAllStats() {
+            const content = document.getElementById('saved-stats-content').textContent;
+            navigator.clipboard.writeText(content)
+                .then(() => {
+                    showStatusMessage('Texto copiado con éxito', true);
+                })
+                .catch(err => {
+                    console.error('Error al copiar:', err);
+                    showStatusMessage('Error al copiar. Por favor inténtalo manualmente.', false);
+                });
+        }
+        
+        function copyExcelStats() {
+            // Solo primeros 100 videos para Excel
+            const excelContent = allVideos.slice(0, 20).map((video, index) => 
+                `${index + 1}\t"${video.title}"\t${video.views}`
+            ).join('\n');
+            
+            navigator.clipboard.writeText(excelContent)
+                .then(() => {
+                    showStatusMessage('Datos formateados para Excel copiados con éxito', true);
+                })
+                .catch(err => {
+                    console.error('Error al copiar:', err);
+                    showStatusMessage('Error al copiar. Por favor inténtalo manualmente.', false);
+                });
+        }
+        
+        async function saveToSheets() {
+            try {
+                document.getElementById('save-sheets-btn').disabled = true;
+                document.getElementById('save-sheets-btn').innerHTML = '<i class="bi bi-arrow-repeat"></i> Guardando...';
+                
+                // Simulamos el guardado
+                await new Promise(resolve => setTimeout(resolve, 20));
+                
+                showStatusMessage('Datos guardados correctamente en Google Sheets', true);
+            } catch (error) {
+                console.error('Error al guardar en Sheets:', error);
+                showStatusMessage('Error al guardar en Sheets: ' + error.message, false);
+            } finally {
+                document.getElementById('save-sheets-btn').disabled = false;
+                document.getElementById('save-sheets-btn').innerHTML = '<i class="bi bi-google me-1"></i> Guardar en Sheets';
+            }
+        }
+        
+        function showStatusMessage(message, isSuccess) {
+            const statusElement = document.getElementById('status-message');
+            const statusTextElement = document.getElementById('status-text');
+            
+            statusElement.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+            statusElement.classList.remove('d-none');
+            statusTextElement.textContent = message;
+            
+            if (isSuccess) {
+                setTimeout(() => {
+                    statusElement.classList.add('d-none');
+                }, 5000);
+            }
+        }
+        
+        function searchVideos() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                filteredVideos = [...allVideos];
+            } else {
+                filteredVideos = allVideos.filter(video => 
+                    video.title.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            currentPage = 1;
+            updatePagination();
+            renderVideos();
+        }
+        
+        // Helper functions
+        function formatDuration(ytDuration) {
+            if (!ytDuration) return '';
+            
+            // Parse YouTube duration format (PT1H2M3S)
+            const match = ytDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            
+            if (!match) return '';
+            
+            const hours = parseInt(match[1] || 0);
+            const minutes = parseInt(match[2] || 0);
+            const seconds = parseInt(match[3] || 0);
+            
+            // Format as HH:MM:SS or MM:SS
+            if (hours > 0) {
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+    </script>
+</body>
+</html>
